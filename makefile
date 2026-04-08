@@ -5,7 +5,7 @@ CFLAGS  = -O2 -g -target bpf -D__TARGET_ARCH_x86 \
 LDFLAGS = -lbpf
 
 # list of programs — add a line here for each new one
-PROGRAMS = hello packet_inspect packet_counter
+PROGRAMS = hello packet_inspect packet_counter connection_tracker
 
 .PHONY: all clean $(PROGRAMS)
 
@@ -27,6 +27,12 @@ packet_counter:
 	$(CC) -O2 -g -o packet_counter/packet_counter_loader \
 		packet_counter/packet_counter_loader.c $(LDFLAGS)
 
+connection_tracker:
+	$(CLANG) $(CFLAGS) -c connection_tracker/connection_tracker.bpf.c \
+		-o connection_tracker/connection_tracker.bpf.o
+	$(CC) -O2 -g -o connection_tracker/connection_tracker_loader \
+		connection_tracker/connection_tracker_loader.c $(LDFLAGS)
+
 clean:
 	find . -name "*.bpf.o" -delete
-	find . -name "*_user" -delete
+	find . -name "*_loader" -delete
