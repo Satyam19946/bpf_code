@@ -1,15 +1,27 @@
-CLANG = clang
-CFLAGS = -O2 -g -target bpf -D__TARGET_ARCH_x86
+CLANG   = clang
+CC      = gcc
+CFLAGS  = -O2 -g -target bpf -D__TARGET_ARCH_x86 \
+          -I/usr/include/x86_64-linux-gnu
+LDFLAGS = -lbpf
 
-all: hello.bpf.o hello
+# list of programs — add a line here for each new one
+PROGRAMS = hello packet_inspect
 
-hello.bpf.o: hello.bpf.c
-	$(CLANG) $(CFLAGS) \
-		-I/usr/include/x86_64-linux-gnu \
-		-c hello.bpf.c -o hello.bpf.o
+.PHONY: all clean $(PROGRAMS)
 
-hello: hello.c
-	gcc -O2 -o hello hello.c -lbpf
+all: $(PROGRAMS)
+
+hello:
+	$(CLANG) $(CFLAGS) -c hello/hello.bpf.c -o hello/hello.bpf.o
+	$(CC) -O2 -g -o hello/hello hello/hello_user.c $(LDFLAGS)
+
+packet_inspect:
+	$(CLANG) $(CFLAGS) -c packet_inspect/packet_inspect.bpf.c \
+		-o packet_inspect/packet_inspect.bpf.o
+	$(CC) -O2 -g -o packet_inspect/packet_inspect_user \
+		packet_inspect/packet_inspect_user.c $(LDFLAGS)
 
 clean:
-	rm -f hello.bpf.o hello
+	find . -name "*.bpf.o" -delete
+	find . -name "*_user" -delete
+	rm -f hello/hello
